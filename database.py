@@ -100,6 +100,10 @@ def execute_query(sql: str, max_rows: int = config.MAX_ROWS) -> pd.DataFrame:
         cursor.execute(sql)
         rows = cursor.fetchmany(max_rows)
         columns = [desc[0] for desc in cursor.description] if cursor.description else []
+        # Drain any remaining rows so mysql.connector doesn't raise
+        # "Unread result found" when the cursor is closed.
+        if cursor.with_rows:
+            cursor.fetchall()
         return pd.DataFrame(rows, columns=columns)
     except MySQLError as exc:
         raise RuntimeError(str(exc)) from exc
