@@ -9,7 +9,7 @@ import config
 
 def get_connection() -> mysql.connector.MySQLConnection:
     """Return a live MySQL connection using env-based credentials."""
-    return mysql.connector.connect(
+    params = dict(
         host=config.DB_HOST,
         port=config.DB_PORT,
         user=config.DB_USER,
@@ -17,6 +17,12 @@ def get_connection() -> mysql.connector.MySQLConnection:
         database=config.DB_NAME,
         connection_timeout=config.QUERY_TIMEOUT,
     )
+    if config.DB_SSL:
+        params["ssl_disabled"] = False
+        if config.DB_SSL_CA:
+            params["ssl_ca"] = config.DB_SSL_CA
+            params["ssl_verify_cert"] = True
+    return mysql.connector.connect(**params)
 
 
 def test_connection() -> tuple[bool, str]:

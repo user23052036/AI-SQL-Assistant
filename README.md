@@ -174,6 +174,30 @@ Open: http://localhost:8501
 
 ---
 
+## Deployment (Streamlit Community Cloud + cloud MySQL)
+
+Vercel/Netlify only serve static sites and short-lived functions, so the app is hosted on **Streamlit Community Cloud**, backed by a free cloud MySQL instance (e.g. Aiven for MySQL).
+
+1. **Create a cloud MySQL instance** and note its host, port, user and password.
+2. **Load the schema and data:**
+   ```bash
+   mysql -h <host> -P <port> -u <user> -p --ssl-mode=REQUIRED < database.sql
+   ```
+3. **Deploy on https://share.streamlit.io** → *New app* → pick this repository, branch `main`, main file `app.py`.
+4. **Add secrets** (*Advanced settings → Secrets*). Root-level secrets are exposed as environment variables, which `config.py` reads:
+   ```toml
+   GROQ_API_KEY = "gsk_..."
+   DB_HOST = "<host>"
+   DB_PORT = "<port>"
+   DB_USER = "<user>"
+   DB_PASSWORD = "<password>"
+   DB_NAME = "ai_sales"
+   DB_SSL = "true"
+   ```
+   `DB_SSL=true` turns on TLS, which most cloud MySQL providers require. Set `DB_SSL_CA` to a CA certificate path if you also want the server certificate verified.
+
+---
+
 ## Running Tests
 
 ```bash
@@ -238,7 +262,7 @@ python -m pytest tests/ -v
 
 | Symptom | Fix |
 |---|---|
-| "Database connection failed" | Check MySQL is running and `.env` credentials are correct |
+| "Database connection failed" | Check MySQL is running and `.env` credentials are correct (cloud MySQL: set `DB_SSL=true`) |
 | "GROQ_API_KEY is not set" | Add your key to `.env` and restart Streamlit |
 | "Only SELECT queries are allowed" | The LLM generated a non-SELECT query; try rephrasing |
 | "Multiple SQL statements are not allowed" | Rephrase your question to ask for a single result |

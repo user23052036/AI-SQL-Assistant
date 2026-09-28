@@ -4,6 +4,7 @@ import pytest
 import pandas as pd
 from unittest.mock import patch, MagicMock, PropertyMock
 
+import config
 import database
 
 
@@ -159,3 +160,21 @@ class TestSchemaToText:
     def test_empty_schema(self):
         text = database.schema_to_text({})
         assert text == ""
+
+
+class TestGetConnectionSSL:
+    @patch("database.mysql.connector.connect")
+    def test_ssl_disabled_by_default(self, mock_connect, monkeypatch):
+        monkeypatch.setattr(config, "DB_SSL", False)
+        database.get_connection()
+        assert "ssl_disabled" not in mock_connect.call_args.kwargs
+
+    @patch("database.mysql.connector.connect")
+    def test_ssl_enabled_passes_tls_args(self, mock_connect, monkeypatch):
+        monkeypatch.setattr(config, "DB_SSL", True)
+        monkeypatch.setattr(config, "DB_SSL_CA", "/tmp/ca.pem")
+        database.get_connection()
+        kwargs = mock_connect.call_args.kwargs
+        assert kwargs["ssl_disabled"] is False
+        assert kwargs["ssl_ca"] == "/tmp/ca.pem"
+        assert kwargs["ssl_verify_cert"] is True
