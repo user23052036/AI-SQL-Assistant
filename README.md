@@ -59,6 +59,7 @@ AI_SQL_Assistant/
 ├── sql_validator.py     # SQL safety validation (multi-layer)
 ├── config.py            # Environment-variable configuration
 ├── database.sql         # MySQL schema + sample data
+├── database_sqlite.sql  # Same schema + data for the SQLite backend
 ├── requirements.txt
 ├── .env.example         # Template — copy to .env and fill in
 ├── .gitignore
@@ -67,7 +68,8 @@ AI_SQL_Assistant/
     ├── conftest.py
     ├── test_config.py
     ├── test_sql_validator.py   # 54 validator tests (safe + dangerous cases)
-    ├── test_database.py        # 12 mocked DB tests
+    ├── test_database.py        # mocked MySQL DB tests
+    ├── test_database_sqlite.py # SQLite backend tests (real temp DB)
     ├── test_sql_generator.py   # 8 mocked Groq tests
     └── test_integration.py     # 13 live-DB tests (skipped if DB unavailable)
 ```
@@ -174,17 +176,29 @@ Open: http://localhost:8501
 
 ---
 
-## Deployment (Streamlit Community Cloud + cloud MySQL)
+## Deployment (Streamlit Community Cloud)
 
-Vercel/Netlify only serve static sites and short-lived functions, so the app is hosted on **Streamlit Community Cloud**, backed by a free cloud MySQL instance (e.g. Aiven for MySQL).
+Vercel/Netlify only serve static sites and short-lived functions, so the app is hosted on **Streamlit Community Cloud**.
 
-1. **Create a cloud MySQL instance** and note its host, port, user and password.
-2. **Load the schema and data:**
+### Option A — SQLite (no database server needed; used for the live demo)
+
+Set `DB_BACKEND=sqlite`. On first use the app builds a SQLite copy of the same `ai_sales` data from `database_sqlite.sql` and opens it **read-only**, and the LLM is told to write SQLite syntax.
+
+1. On https://share.streamlit.io → *Create app* → pick this repository, branch `main`, main file `app.py`.
+2. In *Advanced settings → Secrets* add:
+   ```toml
+   GROQ_API_KEY = "gsk_..."
+   DB_BACKEND = "sqlite"
+   ```
+   Root-level secrets are exposed as environment variables, which `config.py` reads.
+
+### Option B — cloud MySQL
+
+1. Create a cloud MySQL instance (e.g. Aiven for MySQL) and load the data:
    ```bash
    mysql -h <host> -P <port> -u <user> -p --ssl-mode=REQUIRED < database.sql
    ```
-3. **Deploy on https://share.streamlit.io** → *New app* → pick this repository, branch `main`, main file `app.py`.
-4. **Add secrets** (*Advanced settings → Secrets*). Root-level secrets are exposed as environment variables, which `config.py` reads:
+2. Deploy as above, with these secrets:
    ```toml
    GROQ_API_KEY = "gsk_..."
    DB_HOST = "<host>"
@@ -251,7 +265,7 @@ python -m pytest tests/ -v
 
 ## Known Limitations
 
-1. **MySQL required** — The application does not fall back to SQLite or any other database.
+1. **MySQL by default** — Set `DB_BACKEND=sqlite` to run on the bundled SQLite copy of the sample data instead (see Deployment).
 2. **GROQ_API_KEY required for generation** — SQL generation and explanation are disabled without a valid key. The UI displays a clear warning.
 3. **LLM accuracy** — The LLM may generate syntactically valid but semantically incorrect SQL. Always verify critical query results.
 4. **String literal false-negative** — The regex scan strips string literal content before checking forbidden keywords, so a string like `'DROP TABLE foo'` in a WHERE clause will not trigger the validator. The statement-type gate (layer 1) prevents this from being exploitable.

@@ -1,5 +1,7 @@
 """AI SQL Query Generator & Database Assistant — Streamlit front-end."""
 
+from __future__ import annotations
+
 import io
 import streamlit as st
 import pandas as pd
@@ -107,7 +109,7 @@ def _load_db_meta():
 
 st.title("🤖 AI SQL Query Generator & Database Assistant")
 st.write(
-    "Ask questions about your MySQL database in plain English. "
+    f"Ask questions about your {config.SQL_DIALECT} database in plain English. "
     "The AI converts your question into a validated SQL query and executes it safely."
 )
 
@@ -119,10 +121,10 @@ if not db_ok:
     st.error(
         f"**Database connection failed:** {db_info}\n\n"
         "Please check your `.env` file (`DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`) "
-        "and ensure MySQL is running."
+        f"and ensure {config.SQL_DIALECT} is available."
     )
     st.info(
-        "The application requires a MySQL connection. "
+        f"The application requires a {config.SQL_DIALECT} connection. "
         "See README.md for setup instructions."
     )
     # Show schema viewer / UI elements but disable execution buttons
@@ -162,7 +164,7 @@ with st.sidebar:
             for rel in relationships:
                 st.caption(rel)
     else:
-        st.info("Schema unavailable — connect to MySQL first.")
+        st.info(f"Schema unavailable — connect to {config.SQL_DIALECT} first.")
 
     st.divider()
     st.caption(f"Model: `{config.GROQ_MODEL}`")
@@ -382,4 +384,4 @@ if st.session_state["df"] is not None:
 # ── Footer ────────────────────────────────────────────────────────────────────
 
 st.divider()
-st.caption("AI SQL Assistant | Python · Streamlit · Groq · MySQL")
+st.caption(f"AI SQL Assistant | Python · Streamlit · Groq · {config.SQL_DIALECT}")

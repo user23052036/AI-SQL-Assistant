@@ -17,6 +17,12 @@ DB_NAME: str = os.getenv("DB_NAME", "ai_sales")
 DB_SSL: bool = os.getenv("DB_SSL", "false").strip().lower() in ("1", "true", "yes")
 DB_SSL_CA: str = os.getenv("DB_SSL_CA", "")
 
+# "mysql" (default) or "sqlite". SQLite needs no server and is used for the
+# hosted demo; the database file is built from database_sqlite.sql on first use.
+DB_BACKEND: str = os.getenv("DB_BACKEND", "mysql").strip().lower()
+SQLITE_PATH: str = os.getenv("SQLITE_PATH", "")
+SQL_DIALECT: str = "SQLite" if DB_BACKEND == "sqlite" else "MySQL"
+
 MAX_ROWS: int = int(os.getenv("MAX_ROWS", "1000"))
 MAX_CORRECTION_ATTEMPTS: int = 2
 QUERY_TIMEOUT: int = 30

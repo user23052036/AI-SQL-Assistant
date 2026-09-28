@@ -52,9 +52,9 @@ def generate_sql(
         "\n".join(relationships) if relationships else "No explicit FK relationships found."
     )
 
-    prompt = f"""You are an expert MySQL developer.
+    prompt = f"""You are an expert {config.SQL_DIALECT} developer.
 
-Convert the user's natural-language question into a valid MySQL SELECT query.
+Convert the user's natural-language question into a valid {config.SQL_DIALECT} SELECT query.
 
 DATABASE SCHEMA:
 {schema_text}
@@ -69,7 +69,7 @@ RULES:
 1. Generate ONLY a SELECT query — never INSERT, UPDATE, DELETE, DROP, ALTER, TRUNCATE, CREATE, GRANT, or REVOKE.
 2. Use ONLY tables and columns that appear in the schema above.
 3. Use correct JOIN conditions based on the relationships listed.
-4. Use valid MySQL syntax.
+4. Use valid {config.SQL_DIALECT} syntax.
 5. Return ONLY the SQL query — no explanation, no markdown, no code fences.
 6. Use table aliases for readability.
 7. Do not include a trailing semicolon.
@@ -80,7 +80,7 @@ RULES:
         messages=[
             {
                 "role": "system",
-                "content": "You are an expert MySQL SELECT query generator. You output only raw SQL.",
+                "content": f"You are an expert {config.SQL_DIALECT} SELECT query generator. You output only raw SQL.",
             },
             {"role": "user", "content": prompt},
         ],
@@ -121,7 +121,7 @@ def correct_sql(
         for col in columns:
             schema_text += f"  - {col}\n"
 
-    prompt = f"""The following MySQL SELECT query was rejected by the database.
+    prompt = f"""The following {config.SQL_DIALECT} SELECT query was rejected by the database.
 
 ORIGINAL QUESTION:
 {original_question}
@@ -135,7 +135,7 @@ DATABASE ERROR:
 DATABASE SCHEMA:
 {schema_text}
 
-Please produce a corrected MySQL SELECT query that answers the original question.
+Please produce a corrected {config.SQL_DIALECT} SELECT query that answers the original question.
 Return ONLY the corrected SQL — no explanation, no markdown, no code fences.
 Do not include a trailing semicolon.
 """
@@ -143,7 +143,7 @@ Do not include a trailing semicolon.
     response = client.chat.completions.create(
         model=config.GROQ_MODEL,
         messages=[
-            {"role": "system", "content": "You are an expert MySQL query debugger."},
+            {"role": "system", "content": f"You are an expert {config.SQL_DIALECT} query debugger."},
             {"role": "user", "content": prompt},
         ],
         temperature=0.1,
@@ -163,7 +163,7 @@ def explain_sql(sql: str) -> str:
     """
     client = _get_client()
 
-    prompt = f"""Explain this MySQL query in simple language for a beginner software engineer.
+    prompt = f"""Explain this {config.SQL_DIALECT} query in simple language for a beginner software engineer.
 
 SQL:
 {sql}
